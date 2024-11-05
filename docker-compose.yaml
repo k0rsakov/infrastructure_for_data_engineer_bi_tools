@@ -1,8 +1,7 @@
 #version: '3.8'
 
 services:
-  # Metabase
-  metabase-postgres:
+  data-postgres:
     image: postgres:13
     environment:
       POSTGRES_USER: postgres
@@ -10,6 +9,7 @@ services:
       POSTGRES_DB: bi
     ports:
       - "5432:5432"
+  # Metabase
   metabase:
     image: metabase/metabase:v0.51.1.8
     container_name: metabase
@@ -17,3 +17,37 @@ services:
       - "3000:3000"
     depends_on:
       - metabase-postgres
+  # Redash
+  redash-server:
+    image: redash/redash:10.1.0.b50633
+    command: server
+    depends_on:
+      - postgres
+      - redash-redis
+    ports:
+      - "5000:5000"
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redash-redis:6379/0"
+      REDASH_DATABASE_URL: "postgresql://postgres:postgres@postgres/postgres"
+      REDASH_COOKIE_SECRET: "redash-cookie-secret"
+  redash-worker:
+    image: redash/redash:10.1.0.b50633
+    command: scheduler
+    depends_on:
+      - redash-server
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redash-redis:6379/0"
+      REDASH_DATABASE_URL: "postgresql://postgres:postgres@postgres/postgres"
+      REDASH_COOKIE_SECRET: "redash-cookie-secret"
+  redash-redis:
+    image: redis:7-alpine
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5431:5432"
