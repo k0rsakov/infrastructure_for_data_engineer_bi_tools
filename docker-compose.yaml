@@ -1,7 +1,8 @@
-version: '3.8'
+#version: '3.8'
 
 services:
-  postgres:
+  # Metabase
+  metabase-postgres:
     image: postgres:13
     environment:
       POSTGRES_USER: postgres
@@ -14,3 +15,5 @@ services:
     container_name: metabase
     ports:
       - "3000:3000"
+    depends_on:
+      - metabase-postgres
