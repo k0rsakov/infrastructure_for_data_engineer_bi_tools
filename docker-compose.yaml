@@ -15,8 +15,6 @@ services:
     container_name: metabase
     ports:
       - "3000:3000"
-    depends_on:
-      - metabase-postgres
   # Redash
   redash-server:
     image: redash/redash:10.1.0.b50633
