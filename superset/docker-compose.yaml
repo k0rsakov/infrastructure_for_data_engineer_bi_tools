@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  superset:
+    image: apache/superset:3be6cef-py311
+    container_name: superset
+    ports:
+      - "8088:8088"
+    depends_on:
+      - superset-db
+      - superset-redis
+    environment:
+      - SUPERSET_SECRET_KEY=your_secret_key_here
+      - SQLALCHEMY_DATABASE_URI=postgresql://superset:superset@superset-db/superset
+      - REDIS_HOST=superset-redis
+      - REDIS_PORT=6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset-init:
+    image: apache/superset:3be6cef-py311
+    container_name: superset_init
+    depends_on:
+      - superset-db
+    command: >
+      bash -c '
+      pip install psycopg2-binary &&
+      superset db upgrade &&
+      superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@superset.com --password admin &&
+      superset init
+      '
+    environment:
+      - SUPERSET_SECRET_KEY=your_secret_key_here
+      - SQLALCHEMY_DATABASE_URI=postgresql://superset:superset@superset-db/superset
+    restart: on-failure
+
+  superset-worker:
+    image: apache/superset:3be6cef-py311
+    container_name: superset_worker
+    command: "celery --app=superset.tasks.celery_app:app worker"
+    depends_on:
+      - superset-redis
+      - superset-db
+    environment:
+      - SUPERSET_SECRET_KEY=your_secret_key_here
+      - SQLALCHEMY_DATABASE_URI=postgresql://superset:superset@superset-db/superset
+      - REDIS_HOST=superset-redis
+      - REDIS_PORT=6379
+    healthcheck:
+      test: ["CMD", "celery", "--app=superset.tasks.celery_app:app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  superset-db:
+    image: postgres:13
+    container_name: superset_db
+    environment:
+      - POSTGRES_DB=superset
+      - POSTGRES_USER=superset
+      - POSTGRES_PASSWORD=superset
+    ports:
+      - "5430:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "superset"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset-redis:
+    image: redis:7
+    container_name: superset_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
