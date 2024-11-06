@@ -4,6 +4,10 @@ services:
   superset:
     image: apache/superset:3be6cef-py311
     container_name: superset
+    command: >
+      bash -c '
+      pip install trino &&
+      superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger'
     ports:
       - "8088:8088"
     depends_on:
@@ -27,7 +31,7 @@ services:
       - superset-db
     command: >
       bash -c '
-      pip install psycopg2-binary &&
+      pip install psycopg2-binary trino &&
       superset db upgrade &&
       superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@superset.com --password admin &&
       superset init
@@ -40,7 +44,10 @@ services:
   superset-worker:
     image: apache/superset:3be6cef-py311
     container_name: superset_worker
-    command: "celery --app=superset.tasks.celery_app:app worker"
+    command: >
+      bash -c '
+      pip install trino &&
+      celery --app=superset.tasks.celery_app:app worker'
     depends_on:
       - superset-redis
       - superset-db
