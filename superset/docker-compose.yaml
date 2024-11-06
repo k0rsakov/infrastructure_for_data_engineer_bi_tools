@@ -29,6 +29,7 @@ services:
     container_name: superset_init
     depends_on:
       - superset-db
+      - superset-redis
     command: >
       bash -c '
       pip install psycopg2-binary trino &&
@@ -39,7 +40,7 @@ services:
     environment:
       - SUPERSET_SECRET_KEY=your_secret_key_here
       - SQLALCHEMY_DATABASE_URI=postgresql://superset:superset@superset-db/superset
-    restart: on-failure
+    restart: "no"  # Запускаем только один раз
 
   superset-worker:
     image: apache/superset:3be6cef-py311
