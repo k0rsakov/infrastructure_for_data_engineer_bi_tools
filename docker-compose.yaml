@@ -1,4 +1,4 @@
-#version: '3.8'
+version: '3.8'
 
 services:
   data-postgres:
@@ -30,7 +30,26 @@ services:
       REDASH_REDIS_URL: "redis://redash-redis:6379/0"
       REDASH_DATABASE_URL: "postgresql://postgres:postgres@postgres/postgres"
       REDASH_COOKIE_SECRET: "redash-cookie-secret"
+      QUEUES: "queries,scheduled_queries,celery,schemas"
+      WORKERS_COUNT: 2
+    restart: always
+
   redash-worker:
+    image: redash/redash:10.1.0.b50633
+    command: worker
+    depends_on:
+      - redash-server
+    environment:
+      PYTHONUNBUFFERED: 0
+      REDASH_LOG_LEVEL: "INFO"
+      REDASH_REDIS_URL: "redis://redash-redis:6379/0"
+      REDASH_DATABASE_URL: "postgresql://postgres:postgres@postgres/postgres"
+      REDASH_COOKIE_SECRET: "redash-cookie-secret"
+      QUEUES: "queries,scheduled_queries,celery,schemas"
+      WORKERS_COUNT: 2
+    restart: always
+
+  redash-scheduler:
     image: redash/redash:10.1.0.b50633
     command: scheduler
     depends_on:
@@ -41,11 +60,16 @@ services:
       REDASH_REDIS_URL: "redis://redash-redis:6379/0"
       REDASH_DATABASE_URL: "postgresql://postgres:postgres@postgres/postgres"
       REDASH_COOKIE_SECRET: "redash-cookie-secret"
+    restart: always
+
   redash-redis:
     image: redis:7-alpine
+    restart: always
+
   postgres:
     image: postgres:13
     environment:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5431:5432"
+    restart: always
