@@ -18,7 +18,6 @@ services:
       - SQLALCHEMY_DATABASE_URI=postgresql://superset:superset@superset-db:5432/superset
       - REDIS_HOST=superset-redis
       - REDIS_PORT=6379
-#      - CACHE_CONFIG={"CACHE_TYPE": "RedisCache", "CACHE_DEFAULT_TIMEOUT": 300, "CACHE_KEY_PREFIX": "superset_cache", "CACHE_REDIS_URL": "redis://superset-redis:6379/0"}
       - RATELIMIT_STORAGE_URI=redis://superset-redis:6379/1
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
@@ -36,10 +35,7 @@ services:
     command: >
       -c '
       pip install psycopg2-binary trino &&
-      echo "Waiting for PostgreSQL to be ready..." &&
-      until pg_isready -h superset-db -U superset; do
-        sleep 1
-      done &&
+      superset db init &&
       superset db upgrade &&
       superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@superset.com --password admin &&
       superset init
@@ -47,7 +43,6 @@ services:
     environment:
       - SUPERSET_SECRET_KEY=your_secret_key_here
       - SQLALCHEMY_DATABASE_URI=postgresql://superset:superset@superset-db:5432/superset
-#      - CACHE_CONFIG={"CACHE_TYPE": "RedisCache", "CACHE_DEFAULT_TIMEOUT": 300, "CACHE_KEY_PREFIX": "superset_cache", "CACHE_REDIS_URL": "redis://superset-redis:6379/0"}
       - RATELIMIT_STORAGE_URI=redis://superset-redis:6379/1
     restart: "no"
 
@@ -66,7 +61,6 @@ services:
       - SQLALCHEMY_DATABASE_URI=postgresql://superset:superset@superset-db:5432/superset
       - REDIS_HOST=superset-redis
       - REDIS_PORT=6379
-#      - CACHE_CONFIG={"CACHE_TYPE": "RedisCache", "CACHE_DEFAULT_TIMEOUT": 300, "CACHE_KEY_PREFIX": "superset_cache", "CACHE_REDIS_URL": "redis://superset-redis:6379/0"}
       - RATELIMIT_STORAGE_URI=redis://superset-redis:6379/1
     healthcheck:
       test: ["CMD", "celery", "--app=superset.tasks.celery_app:app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
