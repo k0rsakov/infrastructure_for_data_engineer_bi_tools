@@ -1,6 +1,6 @@
 # Инфраструктура для Data-Engineer BI-Tools
 
-Статья на [habr](https://habr.com/ru/articles/00000000000/).
+Статья на [habr](https://habr.com/ru/articles/856922/).
 
 Настройка окружения:
 ```bash
